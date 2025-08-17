@@ -73,8 +73,7 @@ const pointOnArc = (s: ArcSegment, t: number): Point => {
 
 const pointOnSeg = (seg: PathSegment, t: number): Point => (
     seg.type === "line"   ? pointOnLine(seg.from, seg.to, t) :
-    seg.type === "bezier" ? pointOnBezier(seg, t)            :
-                            pointOnArc(seg, t)
+        seg.type === "bezier" ? pointOnBezier(seg, t) : pointOnArc(seg, t)
 );
 
 const bezierLen = (s: BezierSegment, n = 20): number => {
@@ -87,8 +86,7 @@ const bezierLen = (s: BezierSegment, n = 20): number => {
 
 const segLen = (seg: PathSegment): number => (
     seg.type === "line"   ? dist(seg.from, seg.to) :
-    seg.type === "bezier" ? bezierLen(seg)         :
-                            Math.abs(seg.endAngle - seg.startAngle) * seg.radius
+        seg.type === "bezier" ? bezierLen(seg) : Math.abs(seg.endAngle - seg.startAngle) * seg.radius
 );
 
 const totalLen = (path: PathObject): number =>
@@ -102,7 +100,7 @@ const pointOnPath = (path: PathObject, t: number): Point => {
         if (acc + l >= tgt) return pointOnSeg(s, (tgt - acc) / l);
         acc += l;
     }
-    return pointOnSeg(path.segments.at(-1)!, 1);
+    return pointOnSeg( path.segments.at( -1 )!, 1 );
 };
 
 /* ---------- React Component ---------- */
@@ -148,21 +146,21 @@ const PathAnimation: React.FC = () => {
         return arr;
     }, [ ]);
 
-    const mousePos = (e: React.MouseEvent<HTMLCanvasElement>): Point => {
+    const mousePos = ( e: React.MouseEvent<HTMLCanvasElement> ): Point => {
         const rect = e.currentTarget.getBoundingClientRect();
         return { x: e.clientX - rect.left, y: e.clientY - rect.top };
     };
 
-    const onDown = (e: React.MouseEvent<HTMLCanvasElement>): void => {
+    const onDown = ( e: React.MouseEvent<HTMLCanvasElement> ): void => {
         const m = mousePos(e);
         const h = handles(path).find((hd) => dist(hd, m) < 8);
         if (h) setDragging(h);
     };
 
-    const onMove = (e: React.MouseEvent<HTMLCanvasElement>): void => {
+    const onMove = ( e: React.MouseEvent<HTMLCanvasElement> ): void => {
         if (!dragging) return;
         const m = mousePos(e);
-        setPath((prev) => {
+        setPath(( prev ) => {
             const seg = { ...prev.segments[ dragging.seg ] } as PathSegment;
             if (seg.type === "arc") {
                 if (dragging.key === "center") seg.center = m;
@@ -179,10 +177,10 @@ const PathAnimation: React.FC = () => {
     const onUp = (): void => setDragging(null);
 
     /* ----- drawing helpers ----- */
-    const drawPath = (ctx: CanvasRenderingContext2D): void => {
+    const drawPath = ( ctx: CanvasRenderingContext2D ): void => {
         ctx.beginPath();
-        path.segments.forEach((s) => {
-            if (s.type === "line") {
+        path.segments.forEach(( s ) => {
+            if ( s.type === "line" ) {
                 ctx.moveTo(s.from.x, s.from.y);
                 ctx.lineTo(s.to.x,   s.to.y  );
             } else if (s.type === "bezier") {
@@ -197,16 +195,16 @@ const PathAnimation: React.FC = () => {
         ctx.stroke();
     };
 
-    const drawHandles = (ctx: CanvasRenderingContext2D): void => {
+    const drawHandles = ( ctx: CanvasRenderingContext2D ): void => {
         ctx.fillStyle = "#e74c3c";
-        handles(path).forEach((h) => {
+        handles(path).forEach(( h ) => {
             ctx.beginPath();
             ctx.arc(h.x, h.y, 5, 0, Math.PI * 2);
             ctx.fill();
         });
     };
 
-    const drawArrow = (ctx: CanvasRenderingContext2D, p: Point, dir: Point): void => {
+    const drawArrow = ( ctx: CanvasRenderingContext2D, p: Point, dir: Point ): void => {
         const len = 15;
         const ang = Math.atan2(dir.y, dir.x);
         ctx.save();
@@ -224,7 +222,7 @@ const PathAnimation: React.FC = () => {
     };
 
     /* ----- animation frame ----- */
-    const frame = useCallback((time: number) => {
+    const frame = useCallback(( time: number ) => {
         const canvas = canvasRef.current; if (!canvas) return;
         const ctx    = canvas.getContext("2d"); if (!ctx) return;
 
@@ -232,19 +230,19 @@ const PathAnimation: React.FC = () => {
         const dt = (time - prevTimeRef.current) / 1000;
         prevTimeRef.current = time;
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.clearRect( 0, 0, canvas.width, canvas.height );
         drawPath(ctx);
         drawHandles(ctx);
 
         const plen = totalLen(path);
         const pos: Point[] = [ ];
 
-        objects.forEach((o, i) => {
+        objects.forEach(( o, i ) => {
             o.phase = (o.phase + (o.speed * dt) / plen) % 1;
             pos[ i ]  = pointOnPath(path, o.phase);
         });
 
-        const collided = objects.map(() => false);
+        const collided = objects.map( () => false );
         for (let i = 0; i < objects.length; i++) {
             for (let j = i + 1; j < objects.length; j++) {
                 if (dist(pos[ i ], pos[ j ]) < objects[ i ].radius + objects[ j ].radius) {
@@ -253,13 +251,13 @@ const PathAnimation: React.FC = () => {
             }
         }
 
-        objects.forEach((o, i) => {
+        objects.forEach(( o, i ) => {
             const p = pos[ i ];
-            const q = pointOnPath(path, (o.phase + 0.002) % 1);
+            const q = pointOnPath( path, (o.phase + 0.002) % 1 );
             drawArrow(ctx, p, { x: q.x - p.x, y: q.y - p.y });
 
             ctx.beginPath();
-            ctx.arc(p.x, p.y, o.radius, 0, Math.PI * 2);
+            ctx.arc( p.x, p.y, o.radius, 0, Math.PI * 2 );
             ctx.fillStyle = collided[ i ] ? "#f1c40f" : o.color;
             ctx.fill();
             ctx.strokeStyle = "#333";
@@ -270,8 +268,8 @@ const PathAnimation: React.FC = () => {
     }, [ path ]);
 
     /* ----- lifecycle ----- */
-    useEffect(() => {
-        reqRef.current = requestAnimationFrame(frame);
+    useEffect( () => {
+        reqRef.current = requestAnimationFrame( frame );
         return () => cancelAnimationFrame(reqRef.current);
     }, [ frame ]);
 
